@@ -1,6 +1,10 @@
-use cli_lib::prover_utils::{ProgramProof, generate_oracle_data_from_metadata_and_proof_list};
-
 use clap::Parser;
+use execution_utils::{
+    setups::pad_binary,
+    unrolled::UnrolledProgramProof,
+    verifier_binaries::{RECURSION_UNROLLED_BIN, RECURSION_UNROLLED_TXT},
+};
+use verifier_common::prover::risc_v_simulator::cycle::IWithoutByteAccessIsaConfigWithDelegation;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
@@ -15,31 +19,40 @@ pub fn main() {
     // Read binary data from file
     let data = std::fs::read(cli.input_file).expect("Failed to read input file");
 
-    let program_proof: ProgramProof =
+    let (binary, binary_u32) = pad_binary(RECURSION_UNROLLED_BIN.to_vec());
+    let (text, _) = pad_binary(RECURSION_UNROLLED_TXT.to_vec());
+
+    println!("Computing setups");
+    let setup = execution_utils::unrolled::compute_setup_for_machine_configuration::<
+        IWithoutByteAccessIsaConfigWithDelegation,
+    >(&binary, &text);
+    let compiled_layouts =
+        execution_utils::setups::get_unrolled_circuits_artifacts_for_machine_type::<
+            IWithoutByteAccessIsaConfigWithDelegation,
+        >(&binary_u32);
+
+    let proof: UnrolledProgramProof =
         bincode::serde::decode_from_slice(&data, bincode::config::standard())
             .expect("Failed to deserialize ProgramProof")
             .0;
 
-    let end_params = program_proof.end_params;
+    let output = execution_utils::unrolled::verify_unrolled_layer_proof(
+        &proof,
+        &setup,
+        &compiled_layouts,
+        false,
+    )
+    .expect("is valid proof");
 
-    let (metadata, proof_list) = program_proof.to_metadata_and_proof_list();
+    let mut hex_output = String::new();
+    for entry in &output[8..16] {
+        hex_output.push_str(&format!("{:08x}", entry.swap_bytes()));
+    }
+    println!("Basic program (verification key): {}", hex_output);
 
-    let oracle_data = generate_oracle_data_from_metadata_and_proof_list(&metadata, &proof_list);
-    let it = oracle_data.into_iter();
-
-    verifier_common::prover::nd_source_std::set_iterator(it);
-
-    // Assume that program proof has only recursion proofs.
-    println!("Running continue recursive");
-    assert!(metadata.reduced_proof_count > 0);
-    let output = full_statement_verifier::verify_recursion_log_23_layer();
-
-    assert!(
-        verifier_common::prover::nd_source_std::try_read_word().is_none(),
-        "Expected that all words from CSR were consumed"
-    );
-
-    println!("End params (recursion verification key): {:?}", end_params);
-    println!("Basic program (verification key): {:?}", &output[8..16]);
-    println!("Public input (per block): {:?}", &output[0..8]);
+    let mut hex_output = String::new();
+    for entry in &output[0..8] {
+        hex_output.push_str(&format!("{:08x}", entry.swap_bytes()));
+    }
+    println!("Public input (block hash) as hex: {}", hex_output);
 }
