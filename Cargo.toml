@@ -3,6 +3,13 @@ name = "ethproofs_verifier"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "ethproofs_verifier_lib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ethproofs_verifier"
+path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.4", features = ["derive"] }

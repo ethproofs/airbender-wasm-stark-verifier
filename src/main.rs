@@ -1,4 +1,5 @@
 use clap::Parser;
+use ethproofs_verifier_lib::verify_proof;
 use execution_utils::{
     setups::pad_binary,
     unrolled::UnrolledProgramProof,
@@ -11,6 +12,12 @@ use verifier_common::prover::risc_v_simulator::cycle::IWithoutByteAccessIsaConfi
 struct Cli {
     #[arg(long)]
     input_file: String,
+
+    #[arg(long)]
+    use_existing_layout: bool,
+
+    #[arg(long)]
+    output_layouts_dir: Option<String>,
 }
 
 pub fn main() {
@@ -22,6 +29,12 @@ pub fn main() {
     let (binary, binary_u32) = pad_binary(RECURSION_UNROLLED_BIN.to_vec());
     let (text, _) = pad_binary(RECURSION_UNROLLED_TXT.to_vec());
 
+    if cli.use_existing_layout {
+        println!("Using existing layouts and setup from setups/ directory");
+        verify_proof(data);
+        return;
+    }
+
     println!("Computing setups");
     let setup = execution_utils::unrolled::compute_setup_for_machine_configuration::<
         IWithoutByteAccessIsaConfigWithDelegation,
@@ -30,6 +43,25 @@ pub fn main() {
         execution_utils::setups::get_unrolled_circuits_artifacts_for_machine_type::<
             IWithoutByteAccessIsaConfigWithDelegation,
         >(&binary_u32);
+
+    if let Some(output_layouts_dir) = cli.output_layouts_dir {
+        std::fs::create_dir_all(&output_layouts_dir)
+            .expect("Failed to create output layouts directory");
+
+        // binserialize setup
+        let setup_path = format!("{}/setup.bin", output_layouts_dir);
+        let setup_bytes = bincode::serde::encode_to_vec(&setup, bincode::config::standard())
+            .expect("Failed to serialize setup");
+        std::fs::write(setup_path, setup_bytes).expect("Failed to write setup to file");
+
+        // binserialize compiled layouts
+        let layouts_path = format!("{}/compiled_layouts.bin", output_layouts_dir);
+        let layouts_bytes =
+            bincode::serde::encode_to_vec(&compiled_layouts, bincode::config::standard())
+                .expect("Failed to serialize compiled layouts");
+        std::fs::write(layouts_path, layouts_bytes)
+            .expect("Failed to write compiled layouts to file");
+    }
 
     let proof: UnrolledProgramProof =
         bincode::serde::decode_from_slice(&data, bincode::config::standard())

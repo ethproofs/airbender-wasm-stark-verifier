@@ -21,3 +21,10 @@ The first 2 things are verification keys (for recursion and for the 'basic' prog
 In theory they should be always 'constant' (and you should build the program + recursion program and check that they match).
 
 The last entry (public input), would differ for each block, and it represents the hash of the commitment to the block (that contains information like new & old state roots etc).
+
+
+## Additional options
+
+You can pass `--output_layouts_dir` to output the created setup files to a new directory.
+
+You can also run with `--use-existing-layout` to use pre-created layouts (which would make program run a lot faster).
