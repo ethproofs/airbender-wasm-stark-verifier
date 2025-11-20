@@ -1,8 +1,20 @@
 use execution_utils::unrolled::{UnrolledProgramProof, UnrolledProgramSetup};
 
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+pub fn wasm_verify_proof(data: &[u8]) -> js_sys::Array {
+    let (verification_key, block_hash) = verify_proof(data.to_vec());
+    let arr = js_sys::Array::new();
+    arr.push(&JsValue::from_str(&verification_key));
+    arr.push(&JsValue::from_str(&block_hash));
+    arr
+}
+
 pub fn verify_proof(data: Vec<u8>) -> (String, String) {
     let layouts_bytes = include_bytes!("../setups/compiled_layouts.bin");
     let setup_bytes = include_bytes!("../setups/setup.bin");
+
     // Load compiled_layouts from file if output_layouts_dir is provided
     let compiled_layouts: execution_utils::setups::CompiledCircuitsSet =
         bincode::serde::decode_from_slice(layouts_bytes, bincode::config::standard())

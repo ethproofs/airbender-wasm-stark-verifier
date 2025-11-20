@@ -28,3 +28,14 @@ The last entry (public input), would differ for each block, and it represents th
 You can pass `--output_layouts_dir` to output the created setup files to a new directory.
 
 You can also run with `--use-existing-layout` to use pre-created layouts (which would make program run a lot faster).
+
+
+# Wasm
+
+```shell
+cargo install wasm-bindgen-cli
+```
+
+```shell
+RUSTFLAGS='--cfg getrandom_backend="wasm_js"' wasm-pack build --target web --no-opt
+```
