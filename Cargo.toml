@@ -9,9 +9,9 @@ clap = { version = "4.4", features = ["derive"] }
 base64 = "0.21.7"
 bincode = { version = "2", features = ["serde"] }
 
-execution_utils = {git = "https://github.com/matter-labs/zksync-airbender", rev = "0e002409d49200f3dd7098fc2a0a0702021afe62", features=["verifier_binaries"]}
-verifier_common = {git = "https://github.com/matter-labs/zksync-airbender", rev = "0e002409d49200f3dd7098fc2a0a0702021afe62"}
-full_statement_verifier = {git = "https://github.com/matter-labs/zksync-airbender", rev = "0e002409d49200f3dd7098fc2a0a0702021afe62"}
+execution_utils = {git = "https://github.com/matter-labs/zksync-airbender", rev = "da7d3ca8b17712fa5c2f26e80d0546e90c16c704", features=["verifier_binaries"]}
+verifier_common = {git = "https://github.com/matter-labs/zksync-airbender", rev = "da7d3ca8b17712fa5c2f26e80d0546e90c16c704"}
+full_statement_verifier = {git = "https://github.com/matter-labs/zksync-airbender", rev = "da7d3ca8b17712fa5c2f26e80d0546e90c16c704"}
 
 
 [profile.release]
