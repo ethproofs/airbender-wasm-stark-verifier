@@ -2,8 +2,14 @@ use execution_utils::unrolled::{UnrolledProgramProof, UnrolledProgramSetup};
 
 use wasm_bindgen::prelude::*;
 
+// Set up panic hook for better error messages
+#[wasm_bindgen(start)]
+pub fn main() {
+    console_error_panic_hook::set_once();
+}
+
 #[wasm_bindgen]
-pub fn wasm_verify_proof(data: &[u8]) -> js_sys::Array {
+pub fn verify_stark(data: &[u8]) -> js_sys::Array {
     let (verification_key, block_hash) = verify_proof(data.to_vec());
     let arr = js_sys::Array::new();
     arr.push(&JsValue::from_str(&verification_key));
