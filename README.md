@@ -1,41 +1,85 @@
-# ethproofs-verifier
+# Airbender Wasm STARK Verifier
 
+WebAssembly bindings for the Airbender verifier.
 
-First - download the airbender proof from ethproofs.
+## Overview
 
-Run:
+This module builds the `verify_proof` function from `ethproofs_verifier` into WebAssembly, enabling STARK proof verification to run directly in both web browsers and Node.js environments.
 
-```
-RUST_MIN_STACK=267108864 cargo run --release -- --input-file ~/Downloads/matter-labs_f9c5e994-96fc-45c0-98fe-835a53313a62_705856.bin
-```
+## Usage
 
-You'll get the output like this:
+### Installation
 
-```
-End params (recursion verification key): [592082644, 914832686, 2098567393, 2326800689, 2139187838, 4177631951, 1218871476, 1805766682]
-Basic program (verification key): [2515378349, 4234595854, 3925512183, 4162864624, 1989541961, 1232249954, 1448623067, 1605092683]
-Public input (per block): [2820680802, 124999842, 2275559499, 200691927, 3104886037, 3143080570, 941459835, 587801584]
+```bash
+npm install @ethproofs/airbender-wasm-stark-verifier
 ```
 
-The first 2 things are verification keys (for recursion and for the 'basic' program).
-In theory they should be always 'constant' (and you should build the program + recursion program and check that they match).
+### React Integration
 
-The last entry (public input), would differ for each block, and it represents the hash of the commitment to the block (that contains information like new & old state roots etc).
+```typescript
+import init, {
+  main,
+  verify_stark,
+} from '@ethproofs/airbender-wasm-stark-verifier';
 
+await init(); // Initialize WASM (if needed)
+main(); // Initialize panic hook
 
-## Additional options
-
-You can pass `--output_layouts_dir` to output the created setup files to a new directory.
-
-You can also run with `--use-existing-layout` to use pre-created layouts (which would make program run a lot faster).
-
-
-# Wasm
-
-```shell
-cargo install wasm-bindgen-cli
+// Verify a proof
+const isValid = verify_stark(proofBytes);
 ```
 
-```shell
-RUSTFLAGS='--cfg getrandom_backend="wasm_js"' wasm-pack build --target web --no-opt
+### Node.js Usage
+
+```javascript
+const {
+  main,
+  verify_stark,
+} = require('@ethproofs/airbender-wasm-stark-verifier');
+
+// The Node.js version initializes automatically
+
+main(); // Initialize panic hook
+const result = verify_stark(proofBytes);
 ```
+
+## Testing
+
+### Installation
+
+```bash
+npm install
+```
+
+### Building
+
+```bash
+# Build for all targets
+npm run build:all
+```
+
+### Node.js Example
+
+```bash
+npm run test:node
+```
+
+This runs the Node.js example that loads proof and verification key files from the filesystem and verifies them.
+
+### Browser Example
+
+```bash
+npm run test
+```
+
+This starts a local HTTP server at `http://localhost:8080` with a browser example that demonstrates:
+
+- Loading the WASM module in a browser environment
+- File upload interface for proof and verification key files
+- Interactive STARK proof verification
+- Performance metrics and detailed logging
+- Error handling and user feedback
+
+The browser example provides a complete UI for testing the WASM verifier with drag-and-drop file selection and real-time verification results.
+
+**Note:** The browser example requires files to be served over HTTP due to WASM CORS restrictions. The included server script handles this automatically.
