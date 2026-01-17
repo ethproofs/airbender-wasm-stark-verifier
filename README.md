@@ -1,85 +1,66 @@
-# Airbender Wasm STARK Verifier
+# Airbender WASM STARK Verifier
 
-WebAssembly bindings for the Airbender verifier.
+A wrapper around [@matterlabs/ethproofs-airbender-verifier](https://www.npmjs.com/package/@matterlabs/ethproofs-airbender-verifier) providing a simple API for STARK proof verification.
 
-## Overview
-
-This module builds the `verify_proof` function from `ethproofs_verifier` into WebAssembly, enabling STARK proof verification to run directly in both web browsers and Node.js environments.
-
-## Usage
-
-### Installation
+## Installation
 
 ```bash
 npm install @ethproofs/airbender-wasm-stark-verifier
 ```
 
-### React Integration
+## Usage
+
+### Simple API
 
 ```typescript
-import init, {
-  main,
-  verify_stark,
-} from '@ethproofs/airbender-wasm-stark-verifier';
+import { verify_stark } from '@ethproofs/airbender-wasm-stark-verifier';
 
-await init(); // Initialize WASM (if needed)
-main(); // Initialize panic hook
-
-// Verify a proof
-const isValid = verify_stark(proofBytes);
+// Verify a proof - returns true if valid
+const isValid = await verify_stark(proofBytes);
 ```
 
-### Node.js Usage
+### With Error Details
 
-```javascript
-const {
-  main,
-  verify_stark,
-} = require('@ethproofs/airbender-wasm-stark-verifier');
+```typescript
+import { verify_stark_with_result } from '@ethproofs/airbender-wasm-stark-verifier';
 
-// The Node.js version initializes automatically
-
-main(); // Initialize panic hook
-const result = verify_stark(proofBytes);
+const result = await verify_stark_with_result(proofBytes);
+if (!result.success) {
+  console.error('Verification failed:', result.error);
+}
 ```
 
-## Testing
+### Advanced Usage
 
-### Installation
+For more control, use the full verifier API:
 
-```bash
-npm install
+```typescript
+import { createVerifier } from '@ethproofs/airbender-wasm-stark-verifier';
+
+// Create verifier with default options
+const verifier = await createVerifier();
+
+// Or with custom setup/layout for non-default circuit versions
+const verifier = await createVerifier({
+  setupBin: setupBytes,
+  layoutBin: layoutBytes,
+});
+
+// Deserialize and verify
+const handle = verifier.deserializeProofBytes(proofBytes);
+const result = verifier.verifyProof(handle);
 ```
 
-### Building
+## API Reference
 
-```bash
-# Build for all targets
-npm run build:all
-```
+- `verify_stark(proofBytes: Uint8Array): Promise<boolean>` - simple verification that returns `true` if the proof is valid.
 
-### Node.js Example
+- `verify_stark_with_result(proofBytes: Uint8Array): Promise<VerificationResult>` - returns an object with `success` boolean and optional `error` string.
 
-```bash
-npm run test:node
-```
+- `createVerifier(options?: VerifierOptions): Promise<Verifier>` - creates a verifier instance for advanced usage. Optionally accepts custom `setupBin` and `layoutBin` for non-default circuit versions.
 
-This runs the Node.js example that loads proof and verification key files from the filesystem and verifies them.
+- `resetVerifier(): void` - resets the cached verifier instance used by the simple API.
 
-### Browser Example
+## License
 
-```bash
-npm run test
-```
-
-This starts a local HTTP server at `http://localhost:8080` with a browser example that demonstrates:
-
-- Loading the WASM module in a browser environment
-- File upload interface for proof and verification key files
-- Interactive STARK proof verification
-- Performance metrics and detailed logging
-- Error handling and user feedback
-
-The browser example provides a complete UI for testing the WASM verifier with drag-and-drop file selection and real-time verification results.
-
-**Note:** The browser example requires files to be served over HTTP due to WASM CORS restrictions. The included server script handles this automatically.
+MIT

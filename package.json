@@ -1,32 +1,25 @@
 {
   "name": "@ethproofs/airbender-wasm-stark-verifier",
-  "version": "0.1.2",
-  "description": "WASM wrapper for Airbender STARK verifier",
+  "version": "0.2.0",
+  "description": "Simplified API wrapper for Airbender STARK proof verification",
   "type": "module",
-  "main": "pkg/ethproofs_verifier_lib.js",
-  "module": "pkg/ethproofs_verifier_lib.js",
-  "types": "pkg/ethproofs_verifier_lib.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./pkg/ethproofs_verifier_lib.d.ts",
-      "import": "./pkg/ethproofs_verifier_lib.js",
-      "require": "./pkg/ethproofs_verifier_lib.js"
-    },
-    "./pkg/*": "./pkg/*"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
   },
   "files": [
-    "pkg/",
-    "README.md",
-    "test-browser.html",
-    "test-serve.mjs"
+    "dist/",
+    "README.md"
   ],
   "scripts": {
-    "build": "wasm-pack build --target bundler --out-dir pkg --no-opt",
-    "build:node": "wasm-pack build --target nodejs --out-dir pkg-node --no-opt",
-    "build:web": "wasm-pack build --target web --out-dir pkg-web --no-opt",
-    "build:all": "npm run build && npm run build:node && npm run build:web",
-    "test": "npm run build && node test-serve.mjs",
-    "test:node": "npm run build:node && node test-node.mjs"
+    "build": "tsup",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "wasm",
@@ -56,7 +49,11 @@
   "publishConfig": {
     "access": "public"
   },
+  "dependencies": {
+    "@matterlabs/ethproofs-airbender-verifier": "^0.1.1"
+  },
   "devDependencies": {
-    "wasm-pack": "^1.3.4"
+    "tsup": "^8.0.1",
+    "typescript": "^5.4.5"
   }
 }
