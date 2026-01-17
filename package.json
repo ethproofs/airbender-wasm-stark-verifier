@@ -1,6 +1,6 @@
 {
   "name": "@ethproofs/airbender-wasm-stark-verifier",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Simplified API wrapper for Airbender STARK proof verification",
   "type": "module",
   "main": "dist/index.js",
@@ -19,6 +19,7 @@
   ],
   "scripts": {
     "build": "tsup",
+    "test": "node test-node.mjs",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -49,10 +50,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
-    "@matterlabs/ethproofs-airbender-verifier": "^0.1.1"
-  },
   "devDependencies": {
+    "@matterlabs/ethproofs-airbender-verifier": "^0.1.1",
+    "@types/node": "^25.0.9",
     "tsup": "^8.0.1",
     "typescript": "^5.4.5"
   }
