@@ -1,6 +1,6 @@
 # Airbender WASM STARK Verifier
 
-A wrapper around [@matterlabs/ethproofs-airbender-verifier](https://www.npmjs.com/package/@matterlabs/ethproofs-airbender-verifier) providing a simple API for STARK proof verification.
+WebAssembly bindings for the [Airbender](https://github.com/matter-labs/zksync-airbender) STARK verifier. Verify Ethereum STF ZK proofs in browsers and Node.js.
 
 ## Installation
 
@@ -10,56 +10,95 @@ npm install @ethproofs/airbender-wasm-stark-verifier
 
 ## Usage
 
-### Simple API
+### Browser / Bundler (React, Next.js, Vite, etc.)
 
 ```typescript
-import { verify_stark } from '@ethproofs/airbender-wasm-stark-verifier';
+import init, { main, verify_stark } from '@ethproofs/airbender-wasm-stark-verifier';
+
+// Initialize WASM module
+await init();
+
+// Initialize the verifier (sets up panic hook and default config)
+main();
 
 // Verify a proof - returns true if valid
-const isValid = await verify_stark(proofBytes);
+const isValid = verify_stark(proofBytes);
 ```
 
-### With Error Details
+### Node.js
 
-```typescript
-import { verify_stark_with_result } from '@ethproofs/airbender-wasm-stark-verifier';
+```javascript
+import { main, verify_stark } from '@ethproofs/airbender-wasm-stark-verifier/pkg-node/airbender_wasm_stark_verifier.js';
 
-const result = await verify_stark_with_result(proofBytes);
-if (!result.success) {
-  console.error('Verification failed:', result.error);
-}
+// Initialize the verifier
+main();
+
+// Verify a proof
+const isValid = verify_stark(proofBytes);
 ```
 
 ### Advanced Usage
 
-For more control, use the full verifier API:
+For more control over the verification process:
 
 ```typescript
-import { createVerifier } from '@ethproofs/airbender-wasm-stark-verifier';
+import init, {
+  main,
+  deserialize_proof_bytes,
+  verify_proof,
+  init_with,
+} from '@ethproofs/airbender-wasm-stark-verifier';
 
-// Create verifier with default options
-const verifier = await createVerifier();
+await init();
+main();
 
-// Or with custom setup/layout for non-default circuit versions
-const verifier = await createVerifier({
-  setupBin: setupBytes,
-  layoutBin: layoutBytes,
-});
+// Deserialize and verify in separate steps
+const handle = deserialize_proof_bytes(proofBytes);
+const result = verify_proof(handle);
 
-// Deserialize and verify
-const handle = verifier.deserializeProofBytes(proofBytes);
-const result = verifier.verifyProof(handle);
+if (result.success) {
+  console.log('Proof is valid');
+} else {
+  console.error('Verification failed:', result.error());
+}
+
+// Or use custom setup/layout for non-default circuit versions
+init_with(setupBin, layoutBin);
 ```
 
 ## API Reference
 
-- `verify_stark(proofBytes: Uint8Array): Promise<boolean>` - simple verification that returns `true` if the proof is valid.
+- `main()` - initializes the panic hook and default verifier configuration. Call this once before verifying proofs.
 
-- `verify_stark_with_result(proofBytes: Uint8Array): Promise<VerificationResult>` - returns an object with `success` boolean and optional `error` string.
+- `verify_stark(proofBytes: Uint8Array): boolean` - verifies a proof and returns `true` if valid.
 
-- `createVerifier(options?: VerifierOptions): Promise<Verifier>` - creates a verifier instance for advanced usage. Optionally accepts custom `setupBin` and `layoutBin` for non-default circuit versions.
+- `deserialize_proof_bytes(proofBytes: Uint8Array): ProofHandle` - deserializes proof bytes into a handle for verification.
 
-- `resetVerifier(): void` - resets the cached verifier instance used by the simple API.
+- `verify_proof(handle: ProofHandle): VerifyResult` - verifies a deserialized proof. Returns an object with `success` boolean and `error()` method.
+
+- `init_with(setupBin: Uint8Array, layoutBin: Uint8Array)` - initializes the verifier with custom setup and layout binaries for non-default circuit versions.
+
+- `init_defaults()` - initializes the verifier with default configuration (called automatically by `main()`).
+
+## Building
+
+```bash
+# Build for bundlers (default)
+npm run build
+
+# Build for Node.js
+npm run build:node
+
+# Build all targets
+npm run build:all
+```
+
+## Testing
+
+```bash
+# Run Node.js test with a proof file
+npm run test:node -- path/to/proof.bin
+```
 
 ## License
 

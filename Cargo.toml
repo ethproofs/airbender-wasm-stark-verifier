@@ -1,0 +1,22 @@
+[package]
+name = "airbender-wasm-stark-verifier"
+version = "0.4.0"
+edition = "2021"
+license = "MIT"
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+console_error_panic_hook = "0.1"
+
+# Use the forked ethereum-prover's wasm crate
+# NOTE: Fork must have crate-type = ["cdylib", "rlib"] in its Cargo.toml
+proof_verifier_wasm = { git = "https://github.com/ethproofs/ethereum-prover.git", branch = "ethproofs" }
+
+[profile.release]
+opt-level = "s"
+lto = true
