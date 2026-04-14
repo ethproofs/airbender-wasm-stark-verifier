@@ -21,8 +21,11 @@ await init();
 // Initialize the verifier (sets up panic hook and default config)
 main();
 
-// Verify a proof - returns true if valid
+// Verify a proof with default config - returns true if valid
 const isValid = verify_stark(proofBytes);
+
+// Or verify with custom setup/layout binaries
+const isValid = verify_stark(proofBytes, [setupBin, layoutBin]);
 ```
 
 ### Node.js
@@ -33,8 +36,11 @@ import { main, verify_stark } from '@ethproofs/airbender-wasm-stark-verifier/pkg
 // Initialize the verifier
 main();
 
-// Verify a proof
+// Verify a proof with default config
 const isValid = verify_stark(proofBytes);
+
+// Or verify with custom setup/layout binaries
+const isValid = verify_stark(proofBytes, [setupBin, layoutBin]);
 ```
 
 ### Advanced Usage
@@ -70,7 +76,7 @@ init_with(setupBin, layoutBin);
 
 - `main()` - initializes the panic hook and default verifier configuration. Call this once before verifying proofs.
 
-- `verify_stark(proofBytes: Uint8Array): boolean` - verifies a proof and returns `true` if valid.
+- `verify_stark(proofBytes: Uint8Array, vkBytes?: [Uint8Array, Uint8Array]): boolean` - verifies a proof and returns `true` if valid. Optionally pass `[setupBin, layoutBin]` for non-default circuit versions.
 
 - `deserialize_proof_bytes(proofBytes: Uint8Array): ProofHandle` - deserializes proof bytes into a handle for verification.
 
