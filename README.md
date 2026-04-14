@@ -24,8 +24,13 @@ main();
 // Verify a proof with default config - returns true if valid
 const isValid = verify_stark(proofBytes);
 
-// Or verify with custom setup/layout binaries
-const isValid = verify_stark(proofBytes, [setupBin, layoutBin]);
+// Or verify with custom setup/layout binaries (length-prefixed)
+// First 4 bytes = big-endian u32 length of setupBin, followed by setupBin, then layoutBin
+const vkBytes = new Uint8Array(4 + setupBin.byteLength + layoutBin.byteLength);
+new DataView(vkBytes.buffer).setUint32(0, setupBin.byteLength);
+vkBytes.set(setupBin, 4);
+vkBytes.set(layoutBin, 4 + setupBin.byteLength);
+const isValid = verify_stark(proofBytes, vkBytes);
 ```
 
 ### Node.js
@@ -39,8 +44,12 @@ main();
 // Verify a proof with default config
 const isValid = verify_stark(proofBytes);
 
-// Or verify with custom setup/layout binaries
-const isValid = verify_stark(proofBytes, [setupBin, layoutBin]);
+// Or verify with custom setup/layout binaries (length-prefixed)
+const vkBytes = new Uint8Array(4 + setupBin.byteLength + layoutBin.byteLength);
+new DataView(vkBytes.buffer).setUint32(0, setupBin.byteLength);
+vkBytes.set(setupBin, 4);
+vkBytes.set(layoutBin, 4 + setupBin.byteLength);
+const isValid = verify_stark(proofBytes, vkBytes);
 ```
 
 ### Advanced Usage
@@ -69,14 +78,14 @@ if (result.success) {
 }
 
 // Or use custom setup/layout for non-default circuit versions
-init_with(setupBin, layoutBin);
+init_with(new Uint8Array(setupBin), new Uint8Array(layoutBin));
 ```
 
 ## API Reference
 
 - `main()` - initializes the panic hook and default verifier configuration. Call this once before verifying proofs.
 
-- `verify_stark(proofBytes: Uint8Array, vkBytes?: [Uint8Array, Uint8Array]): boolean` - verifies a proof and returns `true` if valid. Optionally pass `[setupBin, layoutBin]` for non-default circuit versions.
+- `verify_stark(proofBytes: Uint8Array, vkBytes?: Uint8Array | null): boolean` - verifies a proof and returns `true` if valid. Optionally pass a length-prefixed `Uint8Array` containing setup and layout binaries for non-default circuit versions. The format is: 4 bytes (big-endian u32) for the setup length, followed by the setup bytes, followed by the layout bytes.
 
 - `deserialize_proof_bytes(proofBytes: Uint8Array): ProofHandle` - deserializes proof bytes into a handle for verification.
 
