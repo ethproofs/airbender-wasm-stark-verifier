@@ -1,32 +1,29 @@
-import { main, verify_stark } from "./pkg-node/airbender_wasm_stark_verifier.js";
+import { verify_stark } from "./pkg-node/airbender_wasm_stark_verifier.js";
 import { readFile } from "fs/promises";
 
 async function test() {
   console.log("Testing @ethproofs/airbender-wasm-stark-verifier\n");
 
   const proofPath = process.argv[2];
+  const vkPath = process.argv[3];
 
-  if (!proofPath) {
-    console.log("No proof file provided. Testing module initialization only.\n");
-    console.log("Initializing verifier...");
-    main();
-    console.log("✓ Verifier initialized successfully\n");
-    console.log("Usage: node test-node.mjs <path-to-proof-file>");
+  if (!proofPath || !vkPath) {
+    console.log("Usage: node test-node.mjs <path-to-proof-file> <path-to-vk-file>");
     return;
   }
 
   console.log(`Loading proof from: ${proofPath}`);
   const proofBytes = new Uint8Array(await readFile(proofPath));
-  console.log(`Proof size: ${proofBytes.length} bytes\n`);
+  console.log(`Proof size: ${proofBytes.length} bytes`);
 
-  console.log("Initializing verifier...");
-  main();
-  console.log("✓ Verifier initialized\n");
+  console.log(`Loading verification key from: ${vkPath}`);
+  const vkBytes = new Uint8Array(await readFile(vkPath));
+  console.log(`VK size: ${vkBytes.length} bytes\n`);
 
   console.log("Verifying proof...");
   const startTime = performance.now();
 
-  const result = verify_stark(proofBytes);
+  const result = verify_stark(proofBytes, vkBytes);
 
   const elapsed = (performance.now() - startTime).toFixed(2);
 

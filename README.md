@@ -13,87 +13,67 @@ npm install @ethproofs/airbender-wasm-stark-verifier
 ### Browser / Bundler (React, Next.js, Vite, etc.)
 
 ```typescript
-import init, { main, verify_stark } from '@ethproofs/airbender-wasm-stark-verifier';
+import init, { verify_stark } from '@ethproofs/airbender-wasm-stark-verifier';
 
 // Initialize WASM module
 await init();
 
-// Initialize the verifier (sets up panic hook and default config)
-main();
-
-// Verify a proof with default config - returns true if valid
-const isValid = verify_stark(proofBytes);
-
-// Or verify with custom setup/layout binaries (length-prefixed)
-// First 4 bytes = big-endian u32 length of setupBin, followed by setupBin, then layoutBin
-const vkBytes = new Uint8Array(4 + setupBin.byteLength + layoutBin.byteLength);
-new DataView(vkBytes.buffer).setUint32(0, setupBin.byteLength);
-vkBytes.set(setupBin, 4);
-vkBytes.set(layoutBin, 4 + setupBin.byteLength);
+// Verify a proof with a single-file verification key - returns true if valid
 const isValid = verify_stark(proofBytes, vkBytes);
 ```
 
 ### Node.js
 
 ```javascript
-import { main, verify_stark } from '@ethproofs/airbender-wasm-stark-verifier/pkg-node/airbender_wasm_stark_verifier.js';
+import { verify_stark } from '@ethproofs/airbender-wasm-stark-verifier/pkg-node/airbender_wasm_stark_verifier.js';
 
-// Initialize the verifier
-main();
-
-// Verify a proof with default config
-const isValid = verify_stark(proofBytes);
-
-// Or verify with custom setup/layout binaries (length-prefixed)
-const vkBytes = new Uint8Array(4 + setupBin.byteLength + layoutBin.byteLength);
-new DataView(vkBytes.buffer).setUint32(0, setupBin.byteLength);
-vkBytes.set(setupBin, 4);
-vkBytes.set(layoutBin, 4 + setupBin.byteLength);
+// Verify a proof with a single-file verification key
 const isValid = verify_stark(proofBytes, vkBytes);
 ```
 
 ### Advanced Usage
 
-For more control over the verification process:
+For more control over the verification process, or to verify against legacy split (setup + layout) verification keys:
 
 ```typescript
 import init, {
-  main,
+  WasmVerifier,
   deserialize_proof_bytes,
-  verify_proof,
-  init_with,
 } from '@ethproofs/airbender-wasm-stark-verifier';
 
 await init();
-main();
 
-// Deserialize and verify in separate steps
+// Single-file verification key (recommended)
+const verifier = WasmVerifier.fromKey(vkBytes);
+
+// Or, for legacy 80-bit deployments, use the two-file format
+// const verifier = WasmVerifier.fromLegacyKey(setupBytes, layoutBytes);
+
 const handle = deserialize_proof_bytes(proofBytes);
-const result = verify_proof(handle);
+const result = verifier.verifyProof(handle);
 
 if (result.success) {
   console.log('Proof is valid');
 } else {
   console.error('Verification failed:', result.error());
 }
-
-// Or use custom setup/layout for non-default circuit versions
-init_with(new Uint8Array(setupBin), new Uint8Array(layoutBin));
 ```
 
 ## API Reference
 
-- `main()` - initializes the panic hook and default verifier configuration. Call this once before verifying proofs.
+- `verify_stark(proofBytes: Uint8Array, vkBytes: Uint8Array): boolean` - verifies a proof against a single-file verification key and returns `true` if valid. The verification key carries its security level (80-bit or 100-bit) explicitly; mismatches with the proof's security level are rejected.
 
-- `verify_stark(proofBytes: Uint8Array, vkBytes?: Uint8Array | null): boolean` - verifies a proof and returns `true` if valid. Optionally pass a length-prefixed `Uint8Array` containing setup and layout binaries for non-default circuit versions. The format is: 4 bytes (big-endian u32) for the setup length, followed by the setup bytes, followed by the layout bytes.
+- `WasmVerifier.fromKey(vkBytes: Uint8Array): WasmVerifier` - constructs a verifier from a single-file verification key.
 
-- `deserialize_proof_bytes(proofBytes: Uint8Array): ProofHandle` - deserializes proof bytes into a handle for verification.
+- `WasmVerifier.fromLegacyKey(setupBytes: Uint8Array, layoutBytes: Uint8Array): WasmVerifier` - constructs a verifier from the legacy two-file format. Only supports 80-bit security; new integrations should use `fromKey`.
 
-- `verify_proof(handle: ProofHandle): VerifyResult` - verifies a deserialized proof. Returns an object with `success` boolean and `error()` method.
+- `WasmVerifier.verifyProof(handle: ProofHandle): VerifyResult` - verifies a deserialized proof. Returns an object with a `success` boolean and an `error()` method.
 
-- `init_with(setupBin: Uint8Array, layoutBin: Uint8Array)` - initializes the verifier with custom setup and layout binaries for non-default circuit versions.
+- `deserialize_proof_bytes(proofBytes: Uint8Array): ProofHandle` - deserializes gzipped proof bytes into a handle for verification.
 
-- `init_defaults()` - initializes the verifier with default configuration (called automatically by `main()`).
+- `SecurityLevel` - enum with `Security80` and `Security100` variants.
+
+- `main()` - initializes the panic hook. Called automatically when the WASM module loads, so explicit calls are usually unnecessary.
 
 ## Building
 
@@ -111,8 +91,8 @@ npm run build:all
 ## Testing
 
 ```bash
-# Run Node.js test with a proof file
-npm run test:node -- path/to/proof.bin
+# Run Node.js test with a proof file and verification key
+npm run test:node -- path/to/proof.bin path/to/vk.bin
 ```
 
 ## License
